@@ -1,0 +1,424 @@
+# 0. 文档说明
+
+- 0.1 文档目标
+- 0.2  c适用环境说明
+- 0.3 系统版本信息
+    - OS：Ubuntu 24.04.4 Desktop
+    - 虚拟化平台：VMware
+    - 云平台：Tencent Cloud
+- 0.4 OpenClaw 版本说明
+- 0.5 网络拓扑说明
+
+---
+
+# 1. OpenClaw 简介
+
+## 1.1 OpenClaw 项目介绍
+## 1.2 OpenClaw 架构说明
+### 1.2.1 OPenClaw典型结构
+```
+openclaw/
+├── apps/
+├── core/
+├── adapters/
+├── plugins/
+├── config/
+├── logs/
+├── data/
+├── scripts/
+├── web/
+├── docker/
+├── .env
+├── package.json / pyproject.toml
+└── README.md
+```
+
+### 1.2.2 各个目录解释
+#### 1.2.2.1 apps/（应用入口目录）
+```
+apps/
+├── qq/
+├── wechat/
+├── api/
+```
+
+#### 1.2.2.2 core/（核心逻辑目录）
+```
+core/
+├── bot/
+├── llm/
+├── memory/
+├── message/
+```
+
+
+
+
+
+
+
+
+
+
+
+	这是一个在每天早上7：30分发一个关于江西省吉安市天气预报的任务，其代码如下
+```
+{
+  "version": 1,
+  "jobs": [
+    {
+      "id": "da014bae-9392-4542-9d7f-c304b65c65b9",
+      "name": "吉安天气提醒",
+      "enabled": true,
+      "createdAtMs": 1773204988819,
+      "updatedAtMs": 1774913454663,
+      "schedule": {
+        "kind": "cron",
+        "expr": "30 7 * * *",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "你是一个暖心的天气提醒助手。请按以下步骤执行：(1) 使用 curl -s \"wttr.in/吉安?format=%l:+%c+%t+%h+%w\" 查询江西省吉安市天气 (2) 解析天气状况：如果包含雨/🌧️ /🌦️ ，则回复 3 条消息强调带伞（>用不同表达方式）；如果晴天/多云，回复 1 条天气播报 (3) 用 emoji 点缀，每条控制在 2 句话内 (4) 不要回复 HEARTBEAT_OK"
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "qqbot",
+        "to": "qqbot:c2c:E3E1BFDD1CA28B608C5A3E3FA9BF8B2B"
+      },
+      "state": {
+        "nextRunAtMs": 1774999800000,
+        "lastRunAtMs": 1774913400009,
+        "lastRunStatus": "ok",
+        "lastStatus": "ok",
+        "lastDurationMs": 54654,
+        "lastDeliveryStatus": "delivered",
+        "consecutiveErrors": 0,
+        "lastDelivered": true
+      }
+    }
+```
+- 1.3 部署方式对比
+    - 云服务器部署
+    - 本地虚拟机部署
+- 1.4 硬件要求
+- 1.5 软件依赖
+
+---
+
+{ "env": { "OPENROUTER_API_KEY": "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" } }
+
+
+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
+18f18ec8e3a16a17d16518f51aa041b7a1050976f55bd976
+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
+# 2. Ubuntu部署OpenClaw
+
+## 2.1 Ubuntu系统安装
+
+### 2.1.1 在VMware安装Ubuntu虚拟机
+
+#### 2.1.1.1 官网下载镜像
+
+官方网址：
+[Ubuntu系统下载 | Ubuntu](https://cn.ubuntu.com/download#desktop)
+选择要下载的镜像，我选择的是**Ubuntu 24.04.4 Desktop**
+**下载完成后查看镜像地址 （如 E:\VMware\vm）**
+#### 2.1.1.2 创建虚拟机
+1. 准备创建虚拟机
+	![626](assets/OpenClaw部署指南/file-20260330211919652.png)
+
+2. 选择“自定义”,再点击“下一步”。
+	![](assets/OpenClaw部署指南/file-20260330212037007.png)
+
+3. 点击“下一步”
+	![](assets/OpenClaw部署指南/file-20260330212250335.png)
+
+4. 选择“浏览”，选择自己储存镜像的路径。再点击"下一步"
+	![](assets/OpenClaw部署指南/file-20260330212408369.png)
+
+5. 设置名称、用户名称及密码（用户名：admin 密码：123456），再点击"下一步"
+	![](assets/OpenClaw部署指南/file-20260330212530040.png)
+
+6. 设置虚拟机名称。点击"浏览"设置虚拟机安装位置  （**建议存储在非系统盘**）。再点击下一步。
+	![](assets/OpenClaw部署指南/file-20260330212710929.png)
+
+7. 设置虚拟机“处理器配置”（建议2x2），再点击“下一步”。
+	![](assets/OpenClaw部署指南/file-20260330212921312.png)
+
+8. 设置虚拟机内存，根据自己电脑性能设置（至少4GB），建议8GB，再点击“下一步”。
+	![](assets/OpenClaw部署指南/file-20260330213046813.png)
+
+9. 选择网络类型，此处不做过多介绍，选择“**使用网络地址转换（NET）**”，再点击”下一步“。
+	![](assets/OpenClaw部署指南/file-20260330213134562.png)
+
+10. 选择I/O控制器类型，**保持默认即可 【LSI Logic(L)】**，点击“下一步”。
+	![](assets/OpenClaw部署指南/file-20260330213206730.png)
+
+11. 选择磁盘类型，此处不做过多介绍，**保持默认即可【SCSI(S)】**，点击“下一步”。
+	![](assets/OpenClaw部署指南/file-20260330213233665.png)
+
+12. 选择“**创建新虚拟磁盘(V)**" ，再点击”下一步“。
+	![](assets/OpenClaw部署指南/file-20260330213307433.png)
+
+13. 设置磁盘大小，根据自己电脑情况设置（建议40+），选择”**将虚拟磁盘拆分成多个文件**，再点击"下一步"。
+	![](assets/OpenClaw部署指南/file-20260330213406407.png)
+
+14. 保持默认即可，点击“下一步”。
+	![](assets/OpenClaw部署指南/file-20260330213441844.png)
+
+15. 完成虚拟机的安装。
+	![](assets/OpenClaw部署指南/file-20260330213554902.png)
+
+#### 2.1.1.3 安装虚拟机
+
+**上一节我们已经完成了虚拟机的创建，下面我们来安装虚拟机。**
+
+1. 选择语言，再点击“下一步”。
+	![](assets/OpenClaw部署指南/file-20260330221827365.png)
+
+2. 根据自己习惯调整，点击“下一步”。
+	![](assets/OpenClaw部署指南/file-20260330221932318.png)
+
+3. 选择键盘布局，选择**英语（美国）**，再点击”下一步“。
+	![](assets/OpenClaw部署指南/file-20260331134457221.png
+
+4. 选择“**使用有线连接**“，再点击“下一步”。
+	![](assets/OpenClaw部署指南/file-20260331134814229.png)
+
+5. 稍后更新，此处先点击“**跳过**”
+	![](assets/OpenClaw部署指南/file-20260331134748444.png)
+
+6. 选择"**安装Ubuntu**“，再点击“下一步”。
+	![](assets/OpenClaw部署指南/file-20260331134929384.png)
+
+7. 选择“**交互式安装**”，再点击”下一步“。
+	![](assets/OpenClaw部署指南/file-20260331135033304.png)
+
+8. 选择安装“默认集合”，再点击“下一步”。
+	![](assets/OpenClaw部署指南/file-20260331135723238.png)
+
+9. 建议全部勾选，再点击“下一步”。
+	![](assets/OpenClaw部署指南/file-20260331140002947.png)
+
+10. 保持默认即可，点击“下一步”。
+	![](assets/OpenClaw部署指南/file-20260331140138824.png)
+
+11. 根据自己情况设置用户及是否需要登录输入密码，密码建议设置简单好记的（此处密码：123456），再点击“下一步”。
+	![](assets/OpenClaw部署指南/file-20260331141035093.png)
+
+12. 选择时区，再点击“下一步”。
+	![](assets/OpenClaw部署指南/file-20260331141230641.png)
+
+13. 确认安装选项，点击“安装”以开始安装。（约20分钟）
+	![](assets/OpenClaw部署指南/file-20260331141356921.png)
+
+14. 点击“重启”，完成安装。
+
+15. 进入欢迎界面，点击“前进”。
+	![](assets/OpenClaw部署指南/file-20260331143954658.png)
+
+16. 点击“跳过”即可。
+	![607](assets/OpenClaw部署指南/file-20260331144100047.png)
+
+17. 选择“否，不共享系统数据”，再点击“前进”。
+	![](assets/OpenClaw部署指南/file-20260331144345440.png)
+
+18. 点击“完成”即可。
+
+### 2.1.2 更新系统
+1. 打开terminal（**右键桌面，选择“在终端中打开”**）
+	![](assets/OpenClaw部署指南/file-20260331145332577.png)
+
+2. （可选）修改主机名
+```
+hostnamectl set-hostname ovo #我设置的hostname为ovo
+hostname #查看hostname
+```
+可以看到hostname已经修改为ovo，但是还是显示原来的主机名，我们重新进入终端刷新一下
+![](assets/OpenClaw部署指南/file-20260331150725608.png)
+重新进入终端后，主机名已经更新好了。
+![](assets/OpenClaw部署指南/file-20260331151910123.png)
+
+3.开始更新
+
+```
+sudo apt update && sudo apt upgrade -y
+```
+输入你的密码开始更新（密码为123456，输入时不显示，输好后回车即可)
+![](assets/OpenClaw部署指南/file-20260331152246262.png)
+
+4. 更新完成
+
+![641](assets/OpenClaw部署指南/file-20260331152640292.png)
+
+## 2.2 基础工具安装
+
+### 2.2.1 安装基础工具 curl
+
+用于下载脚本、访问网络资源。
+
+```
+sudo apt install curl
+```
+![](assets/OpenClaw部署指南/file-20260401000605996.png)
+
+检查curl是否安装成功
+
+```
+curl --version
+```
+
+![](assets/OpenClaw部署指南/file-20260401000750886.png)
+
+### 2.2.2 安装基础工具 vim
+
+用于编辑openclaw.json等配置文件。
+
+```
+sudo apt install vim
+```
+
+![](assets/OpenClaw部署指南/file-20260401010122197.png)
+
+### 2.2.3 安装基础工具 git
+
+用于下载 OpenClaw 代码与版本管理。
+
+```
+sudo apt install git
+```
+
+我已经安装过了，所以输出信息可能和你不一致
+![](assets/OpenClaw部署指南/file-20260401015313079.png)
+
+
+
+### 2.2.4 环境搭建 Node.js
+
+OpenClaw安装要求Node.js v22+
+但是Ubuntu desktop 24.04.4 Node默认为v18
+所以需要升级Node.js
+在这里我们用nvm，不覆盖系统Node
+
+1. 安装 nvm
+```
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.6/install.sh | bash
+```
+	注：nvm 安装 Node 22 时，会自动安装与之匹配的 npm（无需手动升级）
+
+2. 载入 nvm
+```
+export NVM_DIR="$HOME/.nvm"
+```
+
+3. 检查 nvm 再加载到当前终端
+```
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+```
+命令解释
+- `[ ]`是**test命令**的另一种写法
+- `-s 文件名 `是检查文件**是否存在且非空**
+- `$NVM_DIR/nvm.sh`就是nvm的核心脚本路径
+- `&&`是**逻辑AND**
+	- 左边命令返回真，才会执行右边命令
+	- 左边返回假（文件不存在或为空），右边就不会执行
+- `.`是source命令的别名
+	- 他的作用是在**当前shell环境**执行脚本
+	- `\.` 前的反斜杠 `\` 只是防止某些 shell 别名冲突，可以写成 `. "$NVM_DIR/nvm.sh"`
+
+4. 安装Node.js.22
+```
+nvm install 22 
+nvm use 22 #临时切换
+nvm alias default 22  #设置默认版本，每次新开终端都会生效
+```
+
+5. 确认版本
+```
+node -v
+# 输出应该 >= v22.0.0
+```
+
+## 2.3 安装OpenClaw
+
+![](assets/OpenClaw部署指南/file-20260401015129602.png)
+
+前面我们已经安装好了基础工具与环境，现在开始OpenClaw的安装
+
+**这是OpenClaw官网建议的一键安装命令**
+
+```
+curl -fsSl https://openclaw.ai/install.sh | bash
+```
+	代码解释：
+	`curl -fsSl https://openclaw.ai/install.sh`
+	作用：从openclaw官网下载安装脚本 install.sh
+	参数解释
+	- -f 失败时报错
+	- -s 静默模式
+	- -S 显示错误
+	- -L自动跟随重定向
+	`bash`
+	作用：把下载下来的脚本交给bash执行
+
+**安装界面如下**
+
+![](assets/OpenClaw部署指南/file-20260401015129602.png)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+---
+
+# 3. 腾讯云部署 OpenClaw
+
+腾讯云支持一键在服务器上部署OpenClaw
+## 3.1 从创建腾讯云服务器开始
+
+- 3.1.1 选择实例规格
+- 3.1.2 选择系统镜像（Ubuntu 24.04）
+- 3.1.3 配置安全组
+- 3.1.4 配置公网 IP
+
+## 3.2 连接服务器
+
+- 3.2.1 SSH 登录
+- 3.2.2 配置 sudo 权限
+
+	## 3.3 环境初始化
+
+- 3.3.1 更新系统
+- 3.3.2 安装依赖
+
+## 3.4 安装 OpenClaw
+
+- 3.4.1 克隆仓库
+- 3.4.2 安装依赖
+- 3.4.3 配置环境变量
+
+## 3.5 启动 OpenClaw
+
+- 3.5.1 启动服务
+- 3.5.2 查看日志
+- 3.5.3 验证服务
+
+## 3.6 配置公网访问
+
+- 3.6.1 开放端口
+- 3.6.2 配置防火墙
+- 3.6.3 浏览器访问测试
